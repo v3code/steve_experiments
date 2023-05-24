@@ -38,7 +38,7 @@ parser.add_argument('--lr_dec', type=float, default=3e-4)
 parser.add_argument('--lr_warmup_steps', type=int, default=30000)
 parser.add_argument('--lr_half_life', type=int, default=250000)
 parser.add_argument('--clip', type=float, default=0.05)
-parser.add_argument('--epochs', type=int, default=500)
+parser.add_argument('--epochs', type=int, default=100)
 parser.add_argument('--steps', type=int, default=200000)
 
 parser.add_argument('--num_iterations', type=int, default=2)
@@ -223,7 +223,7 @@ for epoch in range(start_epoch, args.epochs):
         gen_video = (model.module if args.use_dp else model).reconstruct_autoregressive(video[:8])
         frames = visualize(video, recon, gen_video, attns, N=8)
         writer.add_video('TRAIN_recons/epoch={:03}'.format(epoch+1), frames)
-        run.log({'TRAIN_recons': wandb.Video(frames)})
+        run.log({'TRAIN_recons': wandb.Video(frames.cpu().numpy())})
     
     with torch.no_grad():
         model.eval()
@@ -273,7 +273,7 @@ for epoch in range(start_epoch, args.epochs):
                 gen_video = (model.module if args.use_dp else model).reconstruct_autoregressive(video[:8])
                 frames = visualize(video, recon, gen_video, attns, N=8)
                 writer.add_video('VAL_recons/epoch={:03}'.format(epoch + 1), frames)
-                run.log({'VAL_recons': wandb.Video(frames)})
+                run.log({'VAL_recons': wandb.Video(frames.cpu().numpy())})
 
         writer.add_scalar('VAL/best_loss', best_val_loss, epoch+1)
 
