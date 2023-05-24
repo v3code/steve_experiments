@@ -23,7 +23,7 @@ from utils import cosine_anneal, linear_warmup
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--seed', type=int, default=1)
-parser.add_argument('--batch_size', type=int, default=32)
+parser.add_argument('--batch_size', type=int, default=24)
 parser.add_argument('--num_workers', type=int, default=2)
 parser.add_argument('--image_size', type=int, default=64)
 parser.add_argument('--img_channels', type=int, default=3)
