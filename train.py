@@ -22,7 +22,7 @@ from utils import cosine_anneal, linear_warmup
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--seed', type=int, default=1)
-parser.add_argument('--batch_size', type=int, default=24)
+parser.add_argument('--batch_size', type=int, default=32)
 parser.add_argument('--num_workers', type=int, default=2)
 parser.add_argument('--image_size', type=int, default=64)
 parser.add_argument('--img_channels', type=int, default=3)
@@ -75,8 +75,8 @@ log_dir = os.path.join(args.log_path, datetime.today().isoformat())
 writer = SummaryWriter(log_dir)
 writer.add_text('hparams', arg_str)
 
-train_dataset = GlobVideoDataset(root=args.data_path, phase='train', img_size=args.image_size, ep_len=args.ep_len, img_glob='????????_image.png')
-val_dataset = GlobVideoDataset(root=args.data_path, phase='val', img_size=args.image_size, ep_len=args.ep_len, img_glob='????????_image.png')
+train_dataset = GlobVideoDataset(root=args.data_path, phase='train', img_size=args.image_size, ep_len=args.ep_len, img_glob='*.png')
+val_dataset = GlobVideoDataset(root=args.data_path, phase='val', img_size=args.image_size, ep_len=args.ep_len, img_glob='*.png')
 
 loader_kwargs = {
     'batch_size': args.batch_size,
@@ -88,8 +88,8 @@ loader_kwargs = {
 
 run = wandb.init(project=args.project_name, name=args.run_name)
 
-train_loader = DataLoader(train_dataset, sampler=None, **loader_kwargs)
-val_loader = DataLoader(val_dataset, sampler=None, **loader_kwargs)
+train_loader = DataLoader(train_dataset, **loader_kwargs)
+val_loader = DataLoader(val_dataset, **loader_kwargs)
 
 train_epoch_size = len(train_loader)
 val_epoch_size = len(val_loader)
