@@ -75,8 +75,8 @@ log_dir = os.path.join(args.log_path, datetime.today().isoformat())
 writer = SummaryWriter(log_dir)
 writer.add_text('hparams', arg_str)
 
-train_dataset = GlobVideoDataset(root=args.data_path, phase='train', img_size=args.image_size, ep_len=args.ep_len, img_glob='*.png')
-val_dataset = GlobVideoDataset(root=args.data_path, phase='val', img_size=args.image_size, ep_len=args.ep_len, img_glob='*.png')
+train_dataset = GlobVideoDataset(root=args.data_path, phase='train', img_size=args.image_size, ep_len=args.ep_len, img_glob='????????_image.png')
+val_dataset = GlobVideoDataset(root=args.data_path, phase='val', img_size=args.image_size, ep_len=args.ep_len, img_glob='????????_image.png')
 
 loader_kwargs = {
     'batch_size': args.batch_size,
