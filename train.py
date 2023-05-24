@@ -4,6 +4,7 @@ import argparse
 
 import torch
 import torchvision.utils as vutils
+import wandb
 
 from torch.optim import Adam
 from torch.nn import DataParallel as DP
@@ -20,10 +21,10 @@ from utils import cosine_anneal, linear_warmup
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--seed', type=int, default=0)
+parser.add_argument('--seed', type=int, default=1)
 parser.add_argument('--batch_size', type=int, default=24)
-parser.add_argument('--num_workers', type=int, default=4)
-parser.add_argument('--image_size', type=int, default=128)
+parser.add_argument('--num_workers', type=int, default=2)
+parser.add_argument('--image_size', type=int, default=64)
 parser.add_argument('--img_channels', type=int, default=3)
 parser.add_argument('--ep_len', type=int, default=3)
 
@@ -48,9 +49,11 @@ parser.add_argument('--mlp_hidden_size', type=int, default=192)
 parser.add_argument('--num_predictor_blocks', type=int, default=1)
 parser.add_argument('--num_predictor_heads', type=int, default=4)
 parser.add_argument('--predictor_dropout', type=int, default=0.0)
+parser.add_argument('--project_name', type=str, default='STEVE JAX')
+parser.add_argument('--run_name', type=str, default='Movie-Solid')
 
 parser.add_argument('--vocab_size', type=int, default=4096)
-parser.add_argument('--num_decoder_blocks', type=int, default=8)
+parser.add_argument('--num_decoder_blocks', type=int, default=4)
 parser.add_argument('--num_decoder_heads', type=int, default=4)
 parser.add_argument('--d_model', type=int, default=192)
 parser.add_argument('--dropout', type=int, default=0.1)
@@ -82,6 +85,8 @@ loader_kwargs = {
     'pin_memory': True,
     'drop_last': True,
 }
+
+run = wandb.init(project=args.project_name, name=args.run_name)
 
 train_loader = DataLoader(train_dataset, sampler=None, **loader_kwargs)
 val_loader = DataLoader(val_dataset, sampler=None, **loader_kwargs)
@@ -204,10 +209,21 @@ for epoch in range(start_epoch, args.epochs):
                 writer.add_scalar('TRAIN/lr_enc', optimizer.param_groups[1]['lr'], global_step)
                 writer.add_scalar('TRAIN/lr_dec', optimizer.param_groups[2]['lr'], global_step)
 
+                run.log({
+                    'TRAIN/loss': loss.item(),
+                    'TRAIN/cross_entropy': cross_entropy.item(),
+                    'TRAIN/mse': mse.item(),
+                    'TRAIN/tau': tau,
+                    'TRAIN/lr_dvae': optimizer.param_groups[0]['lr'],
+                    'TRAIN/lr_enc': optimizer.param_groups[1]['lr'],
+                    'TRAIN/lr_dec': optimizer.param_groups[2]['lr']
+                }, step=global_step)
+
     with torch.no_grad():
         gen_video = (model.module if args.use_dp else model).reconstruct_autoregressive(video[:8])
         frames = visualize(video, recon, gen_video, attns, N=8)
         writer.add_video('TRAIN_recons/epoch={:03}'.format(epoch+1), frames)
+        run.log({'TRAIN_recons': wandb.Video(frames)})
     
     with torch.no_grad():
         model.eval()
@@ -236,6 +252,12 @@ for epoch in range(start_epoch, args.epochs):
         writer.add_scalar('VAL/cross_entropy', val_cross_entropy, epoch + 1)
         writer.add_scalar('VAL/mse', val_mse, epoch+1)
 
+        run.log({
+            'VAL/loss': val_loss,
+            'VAL/cross_entropy': val_cross_entropy,
+            'VAL/mse': val_mse
+        }, step=global_step)
+
         print('====> Epoch: {:3} \t Loss = {:F}'.format(epoch+1, val_loss))
 
         if val_loss < best_val_loss:
@@ -251,6 +273,7 @@ for epoch in range(start_epoch, args.epochs):
                 gen_video = (model.module if args.use_dp else model).reconstruct_autoregressive(video[:8])
                 frames = visualize(video, recon, gen_video, attns, N=8)
                 writer.add_video('VAL_recons/epoch={:03}'.format(epoch + 1), frames)
+                run.log({'VAL_recons': wandb.Video(frames)})
 
         writer.add_scalar('VAL/best_loss', best_val_loss, epoch+1)
 
@@ -267,3 +290,4 @@ for epoch in range(start_epoch, args.epochs):
         print('====> Best Loss = {:F} @ Epoch {}'.format(best_val_loss, best_epoch))
 
 writer.close()
+run.finish()

@@ -13,7 +13,7 @@ parser.add_argument('--out_path', default='data/')
 parser.add_argument('--level', default='e')
 parser.add_argument('--split', default='train')
 parser.add_argument('--version', default='1.0.0')
-parser.add_argument('--image_size', type=int, default=128)
+parser.add_argument('--image_size', type=int, default=64)
 
 args = parser.parse_args()
 
