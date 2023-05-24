@@ -2,6 +2,7 @@ import math
 import os.path
 import argparse
 
+import numpy as np
 import torch
 import torchvision.utils as vutils
 import wandb
@@ -223,7 +224,7 @@ for epoch in range(start_epoch, args.epochs):
         gen_video = (model.module if args.use_dp else model).reconstruct_autoregressive(video[:8])
         frames = visualize(video, recon, gen_video, attns, N=8)
         writer.add_video('TRAIN_recons/epoch={:03}'.format(epoch+1), frames)
-        run.log({'TRAIN_recons': wandb.Video(frames.cpu().numpy())})
+        run.log({'TRAIN_recons': wandb.Video(frames.cpu().numpy() * 255)})
     
     with torch.no_grad():
         model.eval()
@@ -273,7 +274,7 @@ for epoch in range(start_epoch, args.epochs):
                 gen_video = (model.module if args.use_dp else model).reconstruct_autoregressive(video[:8])
                 frames = visualize(video, recon, gen_video, attns, N=8)
                 writer.add_video('VAL_recons/epoch={:03}'.format(epoch + 1), frames)
-                run.log({'VAL_recons': wandb.Video(frames.cpu().numpy())})
+                run.log({'VAL_recons': wandb.Video(frames.cpu().numpy() * 255)})
 
         writer.add_scalar('VAL/best_loss', best_val_loss, epoch+1)
 
